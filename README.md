@@ -33,7 +33,7 @@ import (
 	"time"
 
 	"go.kuoruan.net/v8go-polyfills/fetch"
-	"rogchap.com/v8go"
+	"github.com/tommie/v8go"
 )
 
 func main() {
