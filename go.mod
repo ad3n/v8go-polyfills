@@ -1,4 +1,4 @@
-module go.kuoruan.net/v8go-polyfills
+module github.com/ad3n/v8go-polyfills
 
 go 1.16
 
