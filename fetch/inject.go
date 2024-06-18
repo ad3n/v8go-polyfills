@@ -25,7 +25,7 @@ package fetch
 import (
 	"fmt"
 
-	"rogchap.com/v8go"
+	"github.com/tommie/v8go"
 )
 
 func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {

@@ -25,8 +25,8 @@ package timers
 import (
 	"errors"
 
+	"github.com/tommie/v8go"
 	"go.kuoruan.net/v8go-polyfills/timers/internal"
-	"rogchap.com/v8go"
 )
 
 type Timers interface {

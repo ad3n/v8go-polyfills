@@ -25,7 +25,7 @@ package base64
 import (
 	stdBase64 "encoding/base64"
 
-	"rogchap.com/v8go"
+	"github.com/tommie/v8go"
 )
 
 type Base64 interface {
@@ -41,7 +41,7 @@ func NewBase64() Base64 {
 }
 
 /*
- https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/atob
+https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/atob
 */
 func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
@@ -65,7 +65,7 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 }
 
 /*
- https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa
+https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa
 */
 func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
