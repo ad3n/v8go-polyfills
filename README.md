@@ -3,7 +3,7 @@
 ## Install
 
 ```shell
-go get -u go.kuoruan.net/v8go-polyfills
+go get -u github.com/ad3n/v8go-polyfills
 ```
 
 > This module uses Golang [embed](https://golang.org/pkg/embed/), so requires Go version 1.16
@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.kuoruan.net/v8go-polyfills/fetch"
+	"github.com/ad3n/v8go-polyfills/fetch"
 	"github.com/tommie/v8go"
 )
 

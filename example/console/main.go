@@ -24,7 +24,7 @@ package main
 
 import (
 	"github.com/tommie/v8go"
-	"go.kuoruan.net/v8go-polyfills/console"
+	"github.com/ad3n/v8go-polyfills/console"
 )
 
 func main() {

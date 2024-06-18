@@ -26,7 +26,7 @@ import (
 	"fmt"
 
 	"github.com/tommie/v8go"
-	"go.kuoruan.net/v8go-polyfills/base64"
+	"github.com/ad3n/v8go-polyfills/base64"
 )
 
 func main() {

@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/tommie/v8go"
-	"go.kuoruan.net/v8go-polyfills/timers"
+	"github.com/ad3n/v8go-polyfills/timers"
 )
 
 func main() {
