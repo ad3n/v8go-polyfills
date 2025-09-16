@@ -23,12 +23,12 @@
 package internal
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
 /*
- Response keeps the *http.Response
+Response keeps the *http.Response
 */
 type Response struct {
 	Header     http.Header
@@ -41,11 +41,12 @@ type Response struct {
 }
 
 /*
- Handle the *http.Response, return *Response
+Handle the *http.Response, return *Response
 */
 func HandleHttpResponse(res *http.Response, url string, redirected bool) (*Response, error) {
 	defer res.Body.Close()
-	resBody, err := ioutil.ReadAll(res.Body)
+
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

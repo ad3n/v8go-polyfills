@@ -36,8 +36,8 @@ const (
 )
 
 /*
- RequestInit is the fetch API defined object.
- Only supports raw request now.
+RequestInit is the fetch API defined object.
+Only supports raw request now.
 */
 type RequestInit struct {
 	Body     string            `json:"body"`
@@ -47,7 +47,7 @@ type RequestInit struct {
 }
 
 /*
- Request is the request object used by fetch
+Request is the request object used by fetch
 */
 type Request struct {
 	Body     string
@@ -60,7 +60,7 @@ type Request struct {
 }
 
 /*
- parse and check the request URL, return *url.URL
+parse and check the request URL, return *url.URL
 */
 func ParseRequestURL(rawURL string) (*url.URL, error) {
 	u, err := url.Parse(rawURL)

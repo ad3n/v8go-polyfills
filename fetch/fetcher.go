@@ -34,9 +34,9 @@ import (
 	"time"
 
 	"github.com/ad3n/v8go-polyfills/fetch/internal"
-	. "github.com/ad3n/v8go-polyfills/internal"
+	core "github.com/ad3n/v8go-polyfills/internal"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 const (
@@ -283,9 +283,6 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 		return resolver.GetPromise().Value
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	jsonFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
@@ -305,9 +302,6 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 		return resolver.GetPromise().Value
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	resTmp := v8go.NewObjectTemplate(iso)
 
@@ -423,5 +417,5 @@ func newErrorValue(ctx *v8go.Context, err error) *v8go.Value {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("v8go-polyfills/%s (v8go/%s)", Version, v8go.Version())
+	return fmt.Sprintf("v8go-polyfills/%s (v8go/%s)", core.Version, v8go.Version())
 }

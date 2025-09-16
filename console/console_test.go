@@ -26,7 +26,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 func TestInject(t *testing.T) {

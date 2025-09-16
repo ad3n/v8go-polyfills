@@ -25,7 +25,7 @@ package base64
 import (
 	stdBase64 "encoding/base64"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 type Base64 interface {

@@ -25,7 +25,7 @@ package base64
 import (
 	"testing"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 func TestAtob(t *testing.T) {
