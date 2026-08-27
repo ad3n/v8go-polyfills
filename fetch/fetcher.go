@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"sync/atomic"
@@ -41,8 +40,9 @@ import (
 )
 
 const (
-	UserAgentLocal = "<local>"
-	AddrLocal      = "0.0.0.0:0"
+	UserAgentLocal              = "<local>"
+	AddrLocal                   = "0.0.0.0:0"
+	DefaultMaxResponseBodyBytes = 32 << 20
 )
 
 var defaultLocalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -69,16 +69,18 @@ type fetcher struct {
 	// Use local handler to handle the relative path (starts with "/") request
 	LocalHandler http.Handler
 
-	UserAgentProvider UserAgentProvider
-	client            *http.Client
-	AddrLocal         string
+	UserAgentProvider    UserAgentProvider
+	client               *http.Client
+	AddrLocal            string
+	MaxResponseBodyBytes int64
 }
 
 func NewFetcher(opt ...Option) Fetcher {
 	ft := &fetcher{
-		LocalHandler:      defaultLocalHandler,
-		UserAgentProvider: defaultUserAgentProvider,
-		AddrLocal:         AddrLocal,
+		LocalHandler:         defaultLocalHandler,
+		UserAgentProvider:    defaultUserAgentProvider,
+		AddrLocal:            AddrLocal,
+		MaxResponseBodyBytes: DefaultMaxResponseBodyBytes,
 		client: &http.Client{
 			Transport: http.DefaultTransport,
 			Timeout:   20 * time.Second,
@@ -225,11 +227,13 @@ func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
 	req.RemoteAddr = r.RemoteAddr
 	req.Header = r.Header
 
-	rcd := httptest.NewRecorder()
+	recorder := internal.NewResponseRecorder(f.MaxResponseBodyBytes)
+	f.LocalHandler.ServeHTTP(recorder, req)
+	if err := recorder.Err(); err != nil {
+		return nil, err
+	}
 
-	f.LocalHandler.ServeHTTP(rcd, req)
-
-	return internal.HandleHttpResponse(rcd.Result(), r.URL.String(), false)
+	return recorder.Response(r.URL.String()), nil
 }
 
 func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
@@ -268,7 +272,7 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 		return nil, err
 	}
 
-	return internal.HandleHttpResponse(res, r.URL.String(), redirected.Load())
+	return internal.HandleHttpResponse(res, r.URL.String(), redirected.Load(), f.MaxResponseBodyBytes)
 }
 
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
@@ -283,10 +287,8 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		ctx := info.Context()
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
-		go func() {
-			v, _ := v8go.NewValue(iso, res.Body)
-			resolver.Resolve(v)
-		}()
+		v, _ := v8go.NewValue(iso, res.Body)
+		resolver.Resolve(v)
 
 		return resolver.GetPromise().Value
 	})
@@ -296,16 +298,14 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
-		go func() {
-			val, err := v8go.JSONParse(ctx, res.Body)
-			if err != nil {
-				rejectVal, _ := v8go.NewValue(iso, err.Error())
-				resolver.Reject(rejectVal)
-				return
-			}
+		val, err := v8go.JSONParse(ctx, res.Body)
+		if err != nil {
+			rejectVal, _ := v8go.NewValue(iso, err.Error())
+			resolver.Reject(rejectVal)
+			return resolver.GetPromise().Value
+		}
 
-			resolver.Resolve(val)
-		}()
+		resolver.Resolve(val)
 
 		return resolver.GetPromise().Value
 	})

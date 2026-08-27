@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -19,7 +20,7 @@ func TestHandleHTTPResponse(t *testing.T) {
 		Header:        http.Header{"Content-Type": {"application/json"}},
 		Body:          io.NopCloser(strings.NewReader(payload)),
 		ContentLength: int64(len(payload)),
-	}, "https://example.com", false)
+	}, "https://example.com", false, -1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,6 +29,40 @@ func TestHandleHTTPResponse(t *testing.T) {
 	}
 	if !response.OK || response.Status != http.StatusOK {
 		t.Fatalf("unexpected response status: %+v", response)
+	}
+}
+
+func TestHandleHTTPResponseRejectsOversizedBody(t *testing.T) {
+	t.Parallel()
+
+	response := &http.Response{
+		Status:        "200 OK",
+		StatusCode:    http.StatusOK,
+		Header:        make(http.Header),
+		Body:          io.NopCloser(strings.NewReader("12345")),
+		ContentLength: 5,
+	}
+	result, err := HandleHttpResponse(response, "https://example.com", false, 4)
+	if !errors.Is(err, ErrResponseBodyTooLarge) {
+		t.Fatalf("error = %v, want %v", err, ErrResponseBodyTooLarge)
+	}
+	if result != nil {
+		t.Fatalf("result = %+v, want nil", result)
+	}
+}
+
+func TestResponseRecorderBoundsMemory(t *testing.T) {
+	t.Parallel()
+
+	recorder := NewResponseRecorder(4)
+	if _, err := recorder.Write([]byte("1234")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := recorder.Write([]byte("5")); !errors.Is(err, ErrResponseBodyTooLarge) {
+		t.Fatalf("error = %v, want %v", err, ErrResponseBodyTooLarge)
+	}
+	if got := recorder.body.Len(); got != 4 {
+		t.Fatalf("retained body bytes = %d, want 4", got)
 	}
 }
 
@@ -45,7 +80,7 @@ func BenchmarkHandleHTTPResponse(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		body.offset = 0
-		result, err := HandleHttpResponse(response, "https://example.com", false)
+		result, err := HandleHttpResponse(response, "https://example.com", false, -1)
 		if err != nil {
 			b.Fatal(err)
 		}

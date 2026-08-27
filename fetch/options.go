@@ -64,3 +64,11 @@ func WithAddrLocal(addr string) Option {
 		ft.AddrLocal = addr
 	})
 }
+
+// WithMaxResponseBodyBytes limits the response body retained in Go memory.
+// A negative value disables the limit. The default is DefaultMaxResponseBodyBytes.
+func WithMaxResponseBodyBytes(limit int64) Option {
+	return optionFunc(func(ft *fetcher) {
+		ft.MaxResponseBodyBytes = limit
+	})
+}
