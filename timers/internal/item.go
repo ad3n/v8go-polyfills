@@ -23,6 +23,7 @@
 package internal
 
 import (
+	"sync"
 	"time"
 )
 
@@ -31,48 +32,64 @@ type FunctionCallback func()
 type ClearCallback func(id int32)
 
 type Item struct {
-	ID       int32
-	Done     bool
-	Cleared  bool
-	Interval bool
-	Delay    int32
-
 	ClearCB    ClearCallback
 	FunctionCB FunctionCallback
+
+	done      chan struct{}
+	doneOnce  sync.Once
+	clearOnce sync.Once
+	ID        int32
+	Delay     int32
+
+	Interval bool
 }
 
 func (t *Item) Clear() {
-	if !t.Cleared {
-		t.Cleared = true
-
+	t.clearOnce.Do(func() {
+		close(t.doneChannel())
 		if t.ClearCB != nil {
 			t.ClearCB(t.ID)
 		}
-	}
-
-	t.Done = true
+	})
 }
 
 func (t *Item) Start() {
+	done := t.doneChannel()
 	go func() {
 		defer t.Clear() // self clear
 
-		ticker := time.NewTicker(time.Duration(t.Delay) * time.Millisecond)
+		delay := time.Duration(t.Delay) * time.Millisecond
+		if !t.Interval {
+			timer := time.NewTimer(delay)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+				if t.FunctionCB != nil {
+					t.FunctionCB()
+				}
+			case <-done:
+			}
+			return
+		}
+
+		ticker := time.NewTicker(delay)
 		defer ticker.Stop()
-
-		for range ticker.C {
-			if t.Done {
-				break
-			}
-
-			if t.FunctionCB != nil {
-				t.FunctionCB()
-			}
-
-			if !t.Interval {
-				t.Done = true
-				break
+		for {
+			select {
+			case <-ticker.C:
+				if t.FunctionCB != nil {
+					t.FunctionCB()
+				}
+			case <-done:
+				return
 			}
 		}
 	}()
+}
+
+func (t *Item) doneChannel() chan struct{} {
+	t.doneOnce.Do(func() {
+		t.done = make(chan struct{})
+	})
+	return t.done
 }

@@ -6,7 +6,7 @@
 go get -u github.com/ad3n/v8go-polyfills
 ```
 
-> This module uses Golang [embed](https://golang.org/pkg/embed/), so requires Go version 1.16
+> Requires Go 1.26 or newer.
 
 ## Polyfill List
 

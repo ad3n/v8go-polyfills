@@ -62,13 +62,12 @@ func NewConsole(opt ...Option) Console {
 
 func (c *consoleMethod) GetLogFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-		if args := info.Args(); len(args) > 0 {
-			inputs := make([]interface{}, len(args))
-			for i, input := range args {
-				inputs[i] = input
+		if args := info.Args(); len(args) != 0 {
+			fmt.Fprint(c.Output, args[0])
+			for _, arg := range args[1:] {
+				fmt.Fprint(c.Output, " ", arg)
 			}
-
-			fmt.Fprintln(c.Output, inputs...)
+			fmt.Fprintln(c.Output)
 		}
 
 		return nil

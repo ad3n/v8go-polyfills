@@ -24,6 +24,7 @@ package timers
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/ad3n/v8go"
 	"github.com/ad3n/v8go-polyfills/timers/internal"
@@ -38,16 +39,17 @@ type Timers interface {
 }
 
 type timers struct {
-	Items      map[int32]*internal.Item
-	NextItemID int32
+	items      map[int32]*internal.Item
+	mu         sync.Mutex
+	nextItemID int32
 }
 
 const initNextItemID = 1
 
 func NewTimers() Timers {
 	return &timers{
-		Items:      make(map[int32]*internal.Item),
-		NextItemID: initNextItemID,
+		items:      make(map[int32]*internal.Item),
+		nextItemID: initNextItemID,
 	}
 }
 
@@ -104,13 +106,16 @@ func (t *timers) clear(id int32, interval bool) {
 		return
 	}
 
-	if item, ok := t.Items[id]; ok && item.Interval == interval {
+	t.mu.Lock()
+	item, ok := t.items[id]
+	t.mu.Unlock()
+	if ok && item.Interval == interval {
 		item.Clear()
 	}
 }
 
 func (t *timers) startNewTimer(this v8go.Valuer, args []*v8go.Value, interval bool) (int32, error) {
-	if len(args) <= 0 {
+	if len(args) == 0 {
 		return 0, errors.New("1 argument required, but only 0 present")
 	}
 
@@ -129,28 +134,37 @@ func (t *timers) startNewTimer(this v8go.Valuer, args []*v8go.Value, interval bo
 
 	var restArgs []v8go.Valuer
 	if len(args) > 2 {
-		restArgs = make([]v8go.Valuer, 0)
-		for _, arg := range args[2:] {
-			restArgs = append(restArgs, arg)
+		restArgs = make([]v8go.Valuer, len(args)-2)
+		for i, arg := range args[2:] {
+			restArgs[i] = arg
 		}
 	}
 
+	t.mu.Lock()
+	id := t.nextItemID
+	t.nextItemID++
+	if t.nextItemID < initNextItemID {
+		t.nextItemID = initNextItemID
+	}
+	t.mu.Unlock()
+
 	item := &internal.Item{
-		ID:       t.NextItemID,
-		Done:     false,
-		Cleared:  false,
+		ID:       id,
 		Delay:    delay,
 		Interval: interval,
 		FunctionCB: func() {
 			_, _ = fn.Call(this, restArgs...)
 		},
 		ClearCB: func(id int32) {
-			delete(t.Items, id)
+			t.mu.Lock()
+			delete(t.items, id)
+			t.mu.Unlock()
 		},
 	}
 
-	t.NextItemID++
-	t.Items[item.ID] = item
+	t.mu.Lock()
+	t.items[item.ID] = item
+	t.mu.Unlock()
 
 	item.Start()
 

@@ -33,13 +33,12 @@ import (
 	"github.com/ad3n/v8go"
 )
 
-func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...interface{}) error {
+func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opts ...any) error {
 	var fetchOpts []fetch.Option
 
-	for _, o := range opt {
-		switch t := o.(type) {
-		case fetch.Option:
-			fetchOpts = append(fetchOpts, t)
+	for _, opt := range opts {
+		if fetchOpt, ok := opt.(fetch.Option); ok {
+			fetchOpts = append(fetchOpts, fetchOpt)
 		}
 	}
 
@@ -58,22 +57,17 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	return nil
 }
 
-func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
+func InjectToContext(ctx *v8go.Context, opts ...any) error {
 	var consoleOpts []console.Option
 
-	for _, o := range opt {
-		switch t := o.(type) {
-		case console.Option:
-			consoleOpts = append(consoleOpts, t)
+	for _, opt := range opts {
+		if consoleOpt, ok := opt.(console.Option); ok {
+			consoleOpts = append(consoleOpts, consoleOpt)
 		}
 	}
 
-	for _, p := range []func(*v8go.Context) error{
-		url.InjectTo,
-	} {
-		if err := p(ctx); err != nil {
-			return err
-		}
+	if err := url.InjectTo(ctx); err != nil {
+		return err
 	}
 
 	if err := console.InjectTo(ctx, consoleOpts...); err != nil {

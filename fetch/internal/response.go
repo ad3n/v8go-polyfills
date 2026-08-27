@@ -25,19 +25,30 @@ package internal
 import (
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 )
+
+const responseCopyBufferSize = 32 << 10
+
+var responseCopyBufferPool = sync.Pool{
+	New: func() any {
+		buffer := make([]byte, responseCopyBufferSize)
+		return &buffer
+	},
+}
 
 /*
 Response keeps the *http.Response
 */
 type Response struct {
 	Header     http.Header
-	Status     int32
 	StatusText string
-	OK         bool
-	Redirected bool
 	URL        string
 	Body       string
+	Status     int32
+	OK         bool
+	Redirected bool
 }
 
 /*
@@ -46,9 +57,24 @@ Handle the *http.Response, return *Response
 func HandleHttpResponse(res *http.Response, url string, redirected bool) (*Response, error) {
 	defer res.Body.Close()
 
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
+	var body strings.Builder
+	const maxPreallocate = 1 << 20
+	if res.ContentLength > 0 {
+		body.Grow(int(min(res.ContentLength, maxPreallocate)))
+	}
+	buffer := responseCopyBufferPool.Get().(*[]byte)
+	for {
+		n, readErr := res.Body.Read(*buffer)
+		if n > 0 {
+			_, _ = body.Write((*buffer)[:n])
+		}
+		if readErr != nil {
+			responseCopyBufferPool.Put(buffer)
+			if readErr != io.EOF {
+				return nil, readErr
+			}
+			break
+		}
 	}
 
 	return &Response{
@@ -58,6 +84,6 @@ func HandleHttpResponse(res *http.Response, url string, redirected bool) (*Respo
 		OK:         res.StatusCode >= 200 && res.StatusCode < 300,
 		Redirected: redirected,
 		URL:        url,
-		Body:       string(resBody),
+		Body:       body.String(),
 	}, nil
 }

@@ -22,9 +22,7 @@
 
 package console
 
-import (
-	"io"
-)
+import "io"
 
 type Option interface {
 	apply(c *consoleMethod)

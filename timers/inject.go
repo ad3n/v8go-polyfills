@@ -31,18 +31,18 @@ import (
 func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate) error {
 	t := NewTimers()
 
-	for _, f := range []struct {
-		Name string
-		Func func() v8go.FunctionCallback
+	for _, callback := range [...]struct {
+		name string
+		get  func() v8go.FunctionCallback
 	}{
-		{Name: "setTimeout", Func: t.GetSetTimeoutFunctionCallback},
-		{Name: "setInterval", Func: t.GetSetIntervalFunctionCallback},
-		{Name: "clearTimeout", Func: t.GetClearTimeoutFunctionCallback},
-		{Name: "clearInterval", Func: t.GetClearIntervalFunctionCallback},
+		{name: "setTimeout", get: t.GetSetTimeoutFunctionCallback},
+		{name: "setInterval", get: t.GetSetIntervalFunctionCallback},
+		{name: "clearTimeout", get: t.GetClearTimeoutFunctionCallback},
+		{name: "clearInterval", get: t.GetClearIntervalFunctionCallback},
 	} {
-		fn := v8go.NewFunctionTemplate(iso, f.Func())
+		fn := v8go.NewFunctionTemplate(iso, callback.get())
 
-		if err := global.Set(f.Name, fn, v8go.ReadOnly); err != nil {
+		if err := global.Set(callback.name, fn, v8go.ReadOnly); err != nil {
 			return fmt.Errorf("v8go-polyfills/timers: %w", err)
 		}
 	}

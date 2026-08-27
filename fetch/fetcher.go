@@ -31,6 +31,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/ad3n/v8go-polyfills/fetch/internal"
@@ -56,6 +57,8 @@ var defaultUserAgentProvider = UserAgentProviderFunc(func(u *url.URL) string {
 	return UserAgent()
 })
 
+var userAgent = "v8go-polyfills/" + core.Version + " (v8go/" + v8go.Version() + ")"
+
 type Fetcher interface {
 	GetLocalHandler() http.Handler
 
@@ -67,6 +70,7 @@ type fetcher struct {
 	LocalHandler http.Handler
 
 	UserAgentProvider UserAgentProvider
+	client            *http.Client
 	AddrLocal         string
 }
 
@@ -75,6 +79,10 @@ func NewFetcher(opt ...Option) Fetcher {
 		LocalHandler:      defaultLocalHandler,
 		UserAgentProvider: defaultUserAgentProvider,
 		AddrLocal:         AddrLocal,
+		client: &http.Client{
+			Transport: http.DefaultTransport,
+			Timeout:   20 * time.Second,
+		},
 	}
 
 	for _, o := range opt {
@@ -96,7 +104,7 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
 		go func() {
-			if len(args) <= 0 {
+			if len(args) == 0 {
 				err := errors.New("1 argument required, but only 0 present")
 				resolver.Reject(newErrorValue(ctx, err))
 				return
@@ -159,8 +167,7 @@ func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*int
 		URL:  u,
 		Body: reqInit.Body,
 		Header: http.Header{
-			"Accept":     []string{"*/*"},
-			"Connection": []string{"close"},
+			"Accept": {"*/*"},
 		},
 	}
 
@@ -186,7 +193,7 @@ func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*int
 	if reqInit.Method != "" {
 		req.Method = strings.ToUpper(reqInit.Method)
 	} else {
-		req.Method = "GET"
+		req.Method = http.MethodGet
 	}
 
 	switch r := strings.ToLower(reqInit.Redirect); r {
@@ -195,7 +202,7 @@ func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*int
 	case "":
 		req.Redirect = internal.RequestRedirectFollow
 	default:
-		return nil, fmt.Errorf("unsupported redirect: %s", reqInit.Redirect)
+		return nil, fmt.Errorf("unsupported redirect %q", reqInit.Redirect)
 	}
 
 	return req, nil
@@ -207,7 +214,7 @@ func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
 	}
 
 	var body io.Reader
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		body = strings.NewReader(r.Body)
 	}
 
@@ -227,7 +234,7 @@ func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
 
 func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	var body io.Reader
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		body = strings.NewReader(r.Body)
 	}
 
@@ -237,23 +244,23 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	}
 	req.Header = r.Header
 
-	redirected := false
-	client := &http.Client{
-		Transport: http.DefaultTransport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			switch r.Redirect {
-			case internal.RequestRedirectError:
-				return errors.New("redirects are not allowed")
-			default:
-				if len(via) >= 10 {
-					return errors.New("stopped after 10 redirects")
-				}
-			}
+	var redirected atomic.Bool
 
-			redirected = true
-			return nil
-		},
-		Timeout: 20 * time.Second,
+	client := *f.client
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		switch r.Redirect {
+		case internal.RequestRedirectError:
+			return errors.New("redirects are not allowed")
+		case internal.RequestRedirectManual:
+			return http.ErrUseLastResponse
+		default:
+			if len(via) >= 10 {
+				return errors.New("stopped after 10 redirects")
+			}
+		}
+
+		redirected.Store(true)
+		return nil
 	}
 
 	res, err := client.Do(req)
@@ -261,7 +268,7 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 		return nil, err
 	}
 
-	return internal.HandleHttpResponse(res, r.URL.String(), redirected)
+	return internal.HandleHttpResponse(res, r.URL.String(), redirected.Load())
 }
 
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
@@ -305,9 +312,9 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 	resTmp := v8go.NewObjectTemplate(iso)
 
-	for _, f := range []struct {
+	for _, f := range [...]struct {
 		Name string
-		Tmp  interface{}
+		Tmp  any
 	}{
 		{Name: "text", Tmp: textFnTmp},
 		{Name: "json", Tmp: jsonFnTmp},
@@ -322,9 +329,9 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		return nil, err
 	}
 
-	for _, v := range []struct {
+	for _, v := range [...]struct {
 		Key string
-		Val interface{}
+		Val any
 	}{
 		{Key: "headers", Val: headers},
 		{Key: "ok", Val: res.OK},
@@ -348,27 +355,24 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/get
 	getFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
-		if len(args) <= 0 {
+		if len(args) == 0 {
 			// TODO: this should return an error, but v8go not supported now
 			val, _ := v8go.NewValue(iso, "")
 			return val
 		}
 
-		key := http.CanonicalHeaderKey(args[0].String())
-		val, _ := v8go.NewValue(iso, h.Get(key))
+		val, _ := v8go.NewValue(iso, h.Get(args[0].String()))
 		return val
 	})
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/has
 	hasFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
-		if len(args) <= 0 {
+		if len(args) == 0 {
 			val, _ := v8go.NewValue(iso, false)
 			return val
 		}
-		key := http.CanonicalHeaderKey(args[0].String())
-
-		val, _ := v8go.NewValue(iso, h.Get(key) != "")
+		val, _ := v8go.NewValue(iso, h.Get(args[0].String()) != "")
 		return val
 	})
 
@@ -376,9 +380,9 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 	// TODO: if v8go supports Map in the future, change this to a Map Object
 	headersTmp := v8go.NewObjectTemplate(iso)
 
-	for _, f := range []struct {
+	for _, f := range [...]struct {
 		Name string
-		Tmp  interface{}
+		Tmp  any
 	}{
 		{Name: "get", Tmp: getFnTmp},
 		{Name: "has", Tmp: hasFnTmp},
@@ -412,10 +416,10 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 // so we should new *v8go.Value here
 func newErrorValue(ctx *v8go.Context, err error) *v8go.Value {
 	iso := ctx.Isolate()
-	e, _ := v8go.NewValue(iso, fmt.Sprintf("fetch: %v", err))
+	e, _ := v8go.NewValue(iso, "fetch: "+err.Error())
 	return e
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("v8go-polyfills/%s (v8go/%s)", core.Version, v8go.Version())
+	return userAgent
 }

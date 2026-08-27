@@ -33,22 +33,21 @@ type Base64 interface {
 	GetBtoaFunctionCallback() v8go.FunctionCallback
 }
 
-type base64 struct {
-}
+type base64 struct{}
 
 func NewBase64() Base64 {
-	return &base64{}
+	return base64{}
 }
 
 /*
 https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/atob
 */
-func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
+func (base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		ctx := info.Context()
 
-		if len(args) <= 0 {
+		if len(args) == 0 {
 			// TODO: v8go can't throw a error now, so we return an empty string
 			return newStringValue(ctx, "")
 		}
@@ -67,12 +66,12 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 /*
 https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa
 */
-func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
+func (base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		ctx := info.Context()
 
-		if len(args) <= 0 {
+		if len(args) == 0 {
 			return newStringValue(ctx, "")
 		}
 

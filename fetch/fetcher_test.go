@@ -31,6 +31,8 @@ import (
 	"github.com/ad3n/v8go"
 )
 
+var benchmarkUserAgent string
+
 func TestNewFetcher(t *testing.T) {
 	t.Parallel()
 
@@ -53,6 +55,13 @@ func TestNewFetcher(t *testing.T) {
 	if h := f2.GetLocalHandler(); h != nil {
 		t.Error("set fetcher local handler to <nil> failed")
 		return
+	}
+}
+
+func BenchmarkUserAgent(b *testing.B) {
+	b.ReportAllocs()
+	for b.Loop() {
+		benchmarkUserAgent = UserAgent()
 	}
 }
 

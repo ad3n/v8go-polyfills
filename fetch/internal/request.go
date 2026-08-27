@@ -65,7 +65,7 @@ parse and check the request URL, return *url.URL
 func ParseRequestURL(rawURL string) (*url.URL, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("url '%s' is not valid, %w", rawURL, err)
+		return nil, fmt.Errorf("URL %q is not valid: %w", rawURL, err)
 	}
 
 	/**
@@ -75,10 +75,10 @@ func ParseRequestURL(rawURL string) (*url.URL, error) {
 	case "http", "https":
 	case "": // then scheme is empty, it's a local request
 		if !strings.HasPrefix(u.Path, "/") {
-			return nil, fmt.Errorf("unsupported relatve path %s", u.Path)
+			return nil, fmt.Errorf("unsupported relative path %q", u.Path)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported scheme %s", u.Scheme)
+		return nil, fmt.Errorf("unsupported scheme %q", u.Scheme)
 	}
 
 	return u, nil
