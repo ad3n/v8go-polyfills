@@ -60,6 +60,9 @@ Handle the *http.Response, return *Response
 */
 func HandleHttpResponse(res *http.Response, url string, redirected bool, maxBodyBytes int64) (*Response, error) {
 	defer res.Body.Close()
+	if responseMayHaveBody(res) && maxBodyBytes >= 0 && res.ContentLength > maxBodyBytes {
+		return nil, ErrResponseBodyTooLarge
+	}
 
 	var body strings.Builder
 	const maxPreallocate = 1 << 20
@@ -118,6 +121,13 @@ func HandleHttpResponse(res *http.Response, url string, redirected bool, maxBody
 		URL:        url,
 		Body:       body.String(),
 	}, nil
+}
+
+func responseMayHaveBody(res *http.Response) bool {
+	if res.Request != nil && res.Request.Method == http.MethodHead {
+		return false
+	}
+	return res.StatusCode < 100 || res.StatusCode >= 200 && res.StatusCode != http.StatusNoContent && res.StatusCode != http.StatusNotModified
 }
 
 // ResponseRecorder is a bounded http.ResponseWriter for local fetch handlers.
