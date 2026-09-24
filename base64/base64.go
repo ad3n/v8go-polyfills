@@ -24,6 +24,7 @@ package base64
 
 import (
 	stdBase64 "encoding/base64"
+	"sync"
 
 	"github.com/ad3n/v8go"
 )
@@ -39,33 +40,26 @@ func NewBase64() Base64 {
 	return base64{}
 }
 
-/*
-https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/atob
-*/
 func (base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		ctx := info.Context()
 
 		if len(args) == 0 {
-			// TODO: v8go can't throw a error now, so we return an empty string
 			return newStringValue(ctx, "")
 		}
 
 		encoded := args[0].String()
 
-		byts, err := stdBase64.StdEncoding.DecodeString(encoded)
+		decoded, err := decodeString(encoded)
 		if err != nil {
 			return newStringValue(ctx, "")
 		}
 
-		return newStringValue(ctx, string(byts))
+		return newStringValue(ctx, decoded)
 	}
 }
 
-/*
-https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa
-*/
 func (base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
@@ -77,7 +71,7 @@ func (base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 
 		str := args[0].String()
 
-		encoded := stdBase64.StdEncoding.EncodeToString([]byte(str))
+		encoded := encodeString(str)
 		return newStringValue(ctx, encoded)
 	}
 }
@@ -86,4 +80,45 @@ func newStringValue(ctx *v8go.Context, str string) *v8go.Value {
 	iso := ctx.Isolate()
 	val, _ := v8go.NewValue(iso, str)
 	return val
+}
+
+const scratchBufferSize = 64 << 10
+
+var scratchBufferPool = sync.Pool{
+	New: func() any { return new([scratchBufferSize]byte) },
+}
+
+func encodeString(input string) string {
+	size := stdBase64.StdEncoding.EncodedLen(len(input))
+	if size < 1024 || size > scratchBufferSize {
+		return stdBase64.StdEncoding.EncodeToString([]byte(input))
+	}
+
+	buffer := scratchBufferPool.Get().(*[scratchBufferSize]byte)
+	defer scratchBufferPool.Put(buffer)
+
+	stdBase64.StdEncoding.Encode(buffer[:size], []byte(input))
+	return string(buffer[:size])
+}
+
+func decodeString(input string) (string, error) {
+	size := stdBase64.StdEncoding.DecodedLen(len(input))
+	if size < 1024 || size > scratchBufferSize {
+		decoded, err := stdBase64.StdEncoding.DecodeString(input)
+		if err != nil {
+			return "", err
+		}
+
+		return string(decoded), nil
+	}
+
+	buffer := scratchBufferPool.Get().(*[scratchBufferSize]byte)
+	defer scratchBufferPool.Put(buffer)
+
+	n, err := stdBase64.StdEncoding.Decode(buffer[:size], []byte(input))
+	if err != nil {
+		return "", err
+	}
+
+	return string(buffer[:n]), nil
 }
