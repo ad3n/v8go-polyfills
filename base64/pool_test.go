@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ad3n/v8go"
+	"github.com/tommie/v8go"
 )
 
 func BenchmarkBase64Callbacks(b *testing.B) {

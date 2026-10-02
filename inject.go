@@ -23,14 +23,14 @@
 package polyfills
 
 import (
-	"github.com/ad3n/v8go-polyfills/base64"
-	"github.com/ad3n/v8go-polyfills/console"
-	"github.com/ad3n/v8go-polyfills/fetch"
-	"github.com/ad3n/v8go-polyfills/internal"
-	"github.com/ad3n/v8go-polyfills/timers"
-	"github.com/ad3n/v8go-polyfills/url"
+	"github.com/tommie/v8go-polyfills/base64"
+	"github.com/tommie/v8go-polyfills/console"
+	"github.com/tommie/v8go-polyfills/fetch"
+	"github.com/tommie/v8go-polyfills/internal"
+	"github.com/tommie/v8go-polyfills/timers"
+	"github.com/tommie/v8go-polyfills/url"
 
-	"github.com/ad3n/v8go"
+	"github.com/tommie/v8go"
 )
 
 func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opts ...any) error {

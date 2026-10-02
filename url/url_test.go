@@ -25,7 +25,7 @@ package url
 import (
 	"testing"
 
-	"github.com/ad3n/v8go"
+	"github.com/tommie/v8go"
 )
 
 func TestInject(t *testing.T) {

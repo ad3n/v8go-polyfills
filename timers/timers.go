@@ -26,8 +26,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/ad3n/v8go"
-	"github.com/ad3n/v8go-polyfills/timers/internal"
+	"github.com/tommie/v8go"
+	"github.com/tommie/v8go-polyfills/timers/internal"
 )
 
 type Timers interface {

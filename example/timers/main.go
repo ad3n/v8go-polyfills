@@ -26,8 +26,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ad3n/v8go"
-	"github.com/ad3n/v8go-polyfills/timers"
+	"github.com/tommie/v8go"
+	"github.com/tommie/v8go-polyfills/timers"
 )
 
 func main() {
