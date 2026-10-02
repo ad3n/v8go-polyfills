@@ -26,7 +26,7 @@ import (
 	stdBase64 "encoding/base64"
 	"sync"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 type Base64 interface {

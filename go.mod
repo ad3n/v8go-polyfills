@@ -2,7 +2,7 @@ module github.com/ad3n/v8go-polyfills
 
 go 1.26
 
-require github.com/tommie/v8go v0.36.0
+require github.com/ad3n/v8go v1.0.9
 
 require (
 	github.com/tommie/v8go/deps/android_amd64 v0.0.0-20261001103105-d7df33db7fe1 // indirect

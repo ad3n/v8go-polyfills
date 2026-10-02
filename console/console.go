@@ -27,7 +27,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 // Console is a single console *method*.

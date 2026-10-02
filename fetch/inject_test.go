@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 func TestInjectTo(t *testing.T) {

@@ -26,7 +26,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 )
 
 // InjectTo injects basic console.log support.

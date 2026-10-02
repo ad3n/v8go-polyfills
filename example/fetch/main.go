@@ -27,7 +27,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 	"github.com/ad3n/v8go-polyfills/fetch"
 )
 

@@ -25,7 +25,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/tommie/v8go"
+	"github.com/ad3n/v8go"
 	"github.com/ad3n/v8go-polyfills/base64"
 )
 

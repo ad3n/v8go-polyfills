@@ -1,5 +1,5 @@
-github.com/tommie/v8go v0.36.0 h1:nlcL8bFXH3RF9B4ruXG3509DQBbWaQZc4kaDExqnHLQ=
-github.com/tommie/v8go v0.36.0/go.mod h1:4jnXd1kyX+rsDQ98P6opR4l1VOfSfTFYOt4iHhpuVFA=
+github.com/ad3n/v8go v1.0.9 h1:PJN5aoLNbbKqSdClStm/oUWo5aB60YyWaWNbOrv2eGQ=
+github.com/ad3n/v8go v1.0.9/go.mod h1:f/Zo4ewQYAYARMOkPoGWOTOfjbAWTCGN6lO9RrVnuHI=
 github.com/tommie/v8go/deps/android_amd64 v0.0.0-20261001103105-d7df33db7fe1 h1:R+hRWEtS1wdwxIQNnGXdAqhXhlGpx4OaFmVJwWufrUI=
 github.com/tommie/v8go/deps/android_amd64 v0.0.0-20261001103105-d7df33db7fe1/go.mod h1:+SU4RWSqMXAx2oR/Gzkyc1YAG6F8SCzttMv3sZkh+qY=
 github.com/tommie/v8go/deps/android_arm64 v0.0.0-20261001103105-d7df33db7fe1 h1:AZ+rRHztUKJG8rRKSqyz6bcl7Yrb22oBrY2nGY+1zlI=
