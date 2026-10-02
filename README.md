@@ -3,7 +3,7 @@
 ## Install
 
 ```shell
-go get -u github.com/tommie/v8go-polyfills
+go get -u github.com/ad3n/v8go-polyfills
 ```
 
 > Requires Go 1.26 or newer.
@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tommie/v8go-polyfills/fetch"
+	"github.com/ad3n/v8go-polyfills/fetch"
 	"github.com/tommie/v8go"
 )
 

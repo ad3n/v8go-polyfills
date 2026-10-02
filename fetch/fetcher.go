@@ -33,8 +33,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tommie/v8go-polyfills/fetch/internal"
-	core "github.com/tommie/v8go-polyfills/internal"
+	"github.com/ad3n/v8go-polyfills/fetch/internal"
+	core "github.com/ad3n/v8go-polyfills/internal"
 
 	"github.com/tommie/v8go"
 )

@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/tommie/v8go"
-	"github.com/tommie/v8go-polyfills/fetch"
+	"github.com/ad3n/v8go-polyfills/fetch"
 )
 
 func main() {

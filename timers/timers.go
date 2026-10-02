@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/tommie/v8go"
-	"github.com/tommie/v8go-polyfills/timers/internal"
+	"github.com/ad3n/v8go-polyfills/timers/internal"
 )
 
 type Timers interface {
