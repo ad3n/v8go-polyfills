@@ -1,4 +1,4 @@
-module github.com/tommie/v8go-polyfills
+module github.com/ad3n/v8go-polyfills
 
 go 1.26
 
