@@ -2,15 +2,6 @@ module github.com/ad3n/v8go-polyfills
 
 go 1.26
 
-require github.com/ad3n/v8go v1.0.9
-
-require (
-	github.com/tommie/v8go/deps/android_amd64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-	github.com/tommie/v8go/deps/android_arm64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-	github.com/tommie/v8go/deps/darwin_amd64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-	github.com/tommie/v8go/deps/darwin_arm64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-	github.com/tommie/v8go/deps/linux_amd64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-	github.com/tommie/v8go/deps/linux_arm64 v0.0.0-20261001103105-d7df33db7fe1 // indirect
-)
+require github.com/ad3n/v8go v1.1.7
 
 retract [v0.1.0, v0.3.0]
